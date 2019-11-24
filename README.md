@@ -2,6 +2,11 @@
 
 This repository contains types and derive-macros to convert values between their Rust/protobuf forms.
 
+## Libraries
+
+- Protocol Buffers implementation: [prost](https://github.com/danburkert/prost)
+- gRPC implementation: [tonic](https://github.com/hyperium/tonic)
+
 ## Type Conventions
 
 All `Protobuf Type`s that have `google.protobuf` namespace are [Protocol Buffers Well-Known Types](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf). We use [prost-types](https://docs.rs/prost-types/0.5.0/prost_types/) as their Rust representation. Users should not need to interact with types from `prost-types` directly.
