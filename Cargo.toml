@@ -1,0 +1,5 @@
+[workspace]
+members = [
+  "./s2-protobuf-utils",
+  "./s2-protobuf-utils-derive"
+]
