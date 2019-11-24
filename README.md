@@ -1,10 +1,10 @@
 # S2 Protobuf Utilities
 
-This repository contains types and derive-macros to convert values between its Rust/protobuf forms.
+This repository contains types and derive-macros to convert values between their Rust/protobuf forms.
 
 ## Type Conventions
 
-All `Protobuf Type` that has `google.protobuf` namespace are [Protocol Buffers Well-Known Types](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf). We use [prost-types](https://docs.rs/prost-types/0.5.0/prost_types/) as their Rust representation. Users should not need to interact with types from `prost-types` directly.
+All `Protobuf Type`s that have `google.protobuf` namespace are [Protocol Buffers Well-Known Types](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf). We use [prost-types](https://docs.rs/prost-types/0.5.0/prost_types/) as their Rust representation. Users should not need to interact with types from `prost-types` directly.
 
 ### JSON value
 
@@ -22,7 +22,7 @@ All `Protobuf Type` that has `google.protobuf` namespace are [Protocol Buffers W
 
 In `proto3`, all fields are "optional" (in that it is not an error if the sender fails to set them). But, fields are no longer "nullable", in that there's no way to tell the difference between a field being explicitly set to its default value vs. not having been set at all.
 
-To represent a Rust `Option<T>` where T, we use [Wrappers](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/wrappers.proto).
+To represent a Rust `Option<T>`, we use [Wrappers](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/wrappers.proto).
 
 For scalar types:
 
