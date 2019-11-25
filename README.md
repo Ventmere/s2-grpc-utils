@@ -2,6 +2,10 @@
 
 This repository contains types and derive-macros to convert values between their Rust/protobuf forms.
 
+## Usage
+
+See `s2-job-queue` project.
+
 ## Libraries
 
 - Protocol Buffers implementation: [prost](https://github.com/danburkert/prost)
