@@ -1,5 +1,5 @@
 [package]
-name = "s2-protobuf-utils-derive"
+name = "s2-grpc-utils-derive"
 version = "0.1.0"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
 edition = "2018"

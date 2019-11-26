@@ -1,6 +1,6 @@
-# S2 Protobuf Utilities
+# S2 gRPC Utilities
 
-This repository contains types and derive-macros to convert values between their Rust/protobuf forms.
+Utilities for gRPC/Proto Buffers.
 
 ## Usage
 

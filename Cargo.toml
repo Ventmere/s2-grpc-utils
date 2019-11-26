@@ -1,5 +1,5 @@
 [package]
-name = "s2-protobuf-utils"
+name = "s2-grpc-utils"
 version = "0.1.0"
 authors = ["Flux Xu <fluxxu@gmail.com>"]
 edition = "2018"
@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 snafu = "0.6.0"
 chrono = "0.4.9"
+serde = "1.0"
 serde_json = "1.0"
 prost-types = "0.5.0"
-s2-protobuf-utils-derive = { path = "./crates/s2-protobuf-utils-derive" }
+s2-grpc-utils-derive = { path = "./crates/s2-grpc-utils-derive" }

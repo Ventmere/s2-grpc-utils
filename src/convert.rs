@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use prost_types;
 use prost_types::{Any, Timestamp};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use snafu::ResultExt;
 
@@ -51,6 +52,55 @@ impl S2Proto<Any> for Value {
 }
 
 impl_option!(Value => Any);
+
+/// Helper type to convert any serializable type from/to `google.protobuf.Any`
+pub struct Json<T>(pub T);
+
+impl<T> S2Proto<Any> for Json<T>
+where
+  T: Serialize + for<'de> Deserialize<'de>,
+{
+  fn pack(self) -> Result<Any> {
+    pack_any(self.0)
+  }
+  fn unpack(value: Any) -> Result<Json<T>> {
+    unpack_any(value).map(Json)
+  }
+}
+
+impl<T> S2Proto<Option<Any>> for Option<Json<T>>
+where
+  T: Serialize + for<'de> Deserialize<'de>,
+{
+  fn pack(self) -> Result<Option<Any>> {
+    if let Some(value) = self {
+      Ok(Some(value.pack()?))
+    } else {
+      Ok(None)
+    }
+  }
+  fn unpack(value: Option<Any>) -> Result<Option<Json<T>>> {
+    if let Some(value) = value {
+      Ok(Some(Json::<T>::unpack(value)?))
+    } else {
+      Ok(None)
+    }
+  }
+}
+
+pub fn pack_any<T>(value: T) -> Result<Any>
+where
+  T: Serialize,
+{
+  serde_json::to_value(&value).context(result::Json)?.pack()
+}
+pub fn unpack_any<T>(value: Any) -> Result<T>
+where
+  T: for<'de> Deserialize<'de>,
+{
+  let value = Value::unpack(value)?;
+  Ok(serde_json::from_value(value).context(result::Json)?)
+}
 
 // Timestamp
 
