@@ -8,7 +8,7 @@ pub struct InputReceiver {
   ident: syn::Ident,
   generics: syn::Generics,
   data: ast::Data<(), FieldReceiver>,
-  message_type: syn::Ident,
+  message_type: syn::Path,
 }
 
 impl ToTokens for InputReceiver {
