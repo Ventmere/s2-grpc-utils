@@ -11,6 +11,8 @@ pub enum Error {
   ValueNotPresent,
   #[snafu(display("Could not unpack field '{}' from null", field_name))]
   FieldValueNotPresent { field_name: &'static str },
+  #[snafu(display("JSON value nested too deeply"))]
+  JsonValueNestedTooDeeply,
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

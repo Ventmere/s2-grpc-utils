@@ -1,8 +1,8 @@
 use chrono::{DateTime, Utc};
 use prost_types;
-use prost_types::{Any, Timestamp};
+use prost_types::{Timestamp, Value};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::Value as JsonValue;
 use snafu::ResultExt;
 
 use crate::result::{self, Result};
@@ -50,57 +50,136 @@ macro_rules! impl_option {
 
 // JSON value
 
-/// Proto Buffers: Schemas other than http, https (or the empty schema) might be
-/// used with implementation specific semantics.
-const JSON_TYPE_URL: &str = "s2/json";
-
-impl S2ProtoPack<Any> for Value {
-  fn pack(self) -> Result<Any> {
-    Ok(Any {
-      type_url: JSON_TYPE_URL.to_string(),
-      value: serde_json::to_vec(&self).context(result::Json)?,
-    })
+impl S2ProtoPack<Value> for JsonValue {
+  fn pack(self) -> Result<Value> {
+    json_value_to_value(self)
   }
 }
 
-impl S2ProtoUnpack<Any> for Value {
-  fn unpack(Any { type_url, value }: Any) -> Result<Value> {
-    if type_url == JSON_TYPE_URL {
-      serde_json::from_reader(&value as &[u8]).context(result::Json)
+impl S2ProtoUnpack<Value> for JsonValue {
+  fn unpack(value: Value) -> Result<JsonValue> {
+    value_to_json_value(value)
+  }
+}
+
+impl_option!(JsonValue => Value);
+
+const MAX_JSON_NEST: usize = 100;
+
+fn value_to_json_value(value: Value) -> Result<JsonValue> {
+  fn convert(nest: usize, value: Value) -> Result<JsonValue> {
+    use prost_types::{value::Kind, ListValue, Struct};
+    use serde_json::{Map as JsonMap, Number as JsonNumber};
+
+    if nest >= MAX_JSON_NEST {
+      return Err(result::Error::JsonValueNestedTooDeeply);
+    }
+
+    if let Some(kind) = value.kind {
+      let converted = match kind {
+        Kind::NullValue(_) => JsonValue::Null,
+        Kind::NumberValue(v) => {
+          if let Some(number) = JsonNumber::from_f64(v) {
+            JsonValue::Number(number)
+          } else {
+            JsonValue::Null
+          }
+        }
+        Kind::StringValue(v) => JsonValue::String(v),
+        Kind::BoolValue(v) => JsonValue::Bool(v),
+        Kind::StructValue(Struct { fields }) => JsonValue::Object({
+          let mut json_map = JsonMap::with_capacity(fields.len());
+          for (k, v) in fields {
+            json_map.insert(k, convert(nest + 1, v)?);
+          }
+          json_map
+        }),
+        Kind::ListValue(ListValue { values }) => {
+          let mut json_values = Vec::with_capacity(values.len());
+          for v in values {
+            json_values.push(convert(nest + 1, v)?);
+          }
+          JsonValue::Array(json_values)
+        }
+      };
+      Ok(converted)
     } else {
-      Err(result::Error::JsonTypeUrlUnknown { type_url })
+      Ok(JsonValue::Null)
     }
   }
+
+  convert(0, value)
 }
 
-impl_option!(Value => Any);
+fn json_value_to_value(value: JsonValue) -> Result<Value> {
+  fn convert(nest: usize, value: JsonValue) -> Result<Value> {
+    use prost_types::{value::Kind, ListValue, Struct};
+    use std::collections::BTreeMap;
 
-/// Helper type to convert any serializable type from/to `google.protobuf.Any`
+    if nest >= MAX_JSON_NEST {
+      return Err(result::Error::JsonValueNestedTooDeeply);
+    }
+
+    let kind = match value {
+      JsonValue::Null => Kind::NullValue(0),
+      JsonValue::Bool(v) => Kind::BoolValue(v),
+      JsonValue::Number(v) => {
+        if let Some(v) = v.as_f64() {
+          Kind::NumberValue(v)
+        } else {
+          Kind::NullValue(0)
+        }
+      }
+      JsonValue::String(v) => Kind::StringValue(v),
+      JsonValue::Array(values) => {
+        let mut value_values = Vec::with_capacity(values.len());
+        for v in values {
+          value_values.push(convert(nest + 1, v)?);
+        }
+        Kind::ListValue(ListValue {
+          values: value_values,
+        })
+      }
+      JsonValue::Object(map) => {
+        let mut value_map = BTreeMap::new();
+        for (k, v) in map {
+          value_map.insert(k, convert(nest + 1, v)?);
+        }
+        Kind::StructValue(Struct { fields: value_map })
+      }
+    };
+    Ok(Value { kind: Some(kind) })
+  }
+
+  convert(0, value)
+}
+
+/// Helper type to convert any serializable type from/to `google.protobuf.Value`
 pub struct Json<T>(pub T);
 
-impl<T> S2ProtoPack<Any> for Json<T>
+impl<T> S2ProtoPack<Value> for Json<T>
 where
   T: Serialize + for<'de> Deserialize<'de>,
 {
-  fn pack(self) -> Result<Any> {
-    pack_any(self.0)
+  fn pack(self) -> Result<Value> {
+    pack_value(self.0)
   }
 }
 
-impl<T> S2ProtoUnpack<Any> for Json<T>
+impl<T> S2ProtoUnpack<Value> for Json<T>
 where
   T: Serialize + for<'de> Deserialize<'de>,
 {
-  fn unpack(value: Any) -> Result<Json<T>> {
-    unpack_any(value).map(Json)
+  fn unpack(value: Value) -> Result<Json<T>> {
+    unpack_value(value).map(Json)
   }
 }
 
-impl<T> S2ProtoPack<Option<Any>> for Option<Json<T>>
+impl<T> S2ProtoPack<Option<Value>> for Option<Json<T>>
 where
   T: Serialize + for<'de> Deserialize<'de>,
 {
-  fn pack(self) -> Result<Option<Any>> {
+  fn pack(self) -> Result<Option<Value>> {
     if let Some(value) = self {
       Ok(Some(value.pack()?))
     } else {
@@ -109,11 +188,11 @@ where
   }
 }
 
-impl<T> S2ProtoUnpack<Option<Any>> for Option<Json<T>>
+impl<T> S2ProtoUnpack<Option<Value>> for Option<Json<T>>
 where
   T: Serialize + for<'de> Deserialize<'de>,
 {
-  fn unpack(value: Option<Any>) -> Result<Option<Json<T>>> {
+  fn unpack(value: Option<Value>) -> Result<Option<Json<T>>> {
     if let Some(value) = value {
       Ok(Some(Json::<T>::unpack(value)?))
     } else {
@@ -122,18 +201,18 @@ where
   }
 }
 
-pub fn pack_any<T>(value: T) -> Result<Any>
+pub fn pack_value<T>(value: T) -> Result<Value>
 where
   T: Serialize,
 {
   serde_json::to_value(&value).context(result::Json)?.pack()
 }
 
-pub fn unpack_any<T>(value: Any) -> Result<T>
+pub fn unpack_value<T>(value: Value) -> Result<T>
 where
   T: for<'de> Deserialize<'de>,
 {
-  let value = Value::unpack(value)?;
+  let value = JsonValue::unpack(value)?;
   Ok(serde_json::from_value(value).context(result::Json)?)
 }
 

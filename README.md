@@ -17,9 +17,9 @@ All `Protobuf Type`s that have `google.protobuf` namespace are [Protocol Buffers
 
 ### JSON value
 
-| Rust Type                                                             | Protobuf Type                                            |
-| --------------------------------------------------------------------- | -------------------------------------------------------- |
-| [serde_json::Value](https://docs.serde.rs/serde_json/enum.Value.html) | `google.protobuf.Any` where `type_url` = `s2/json_value` |
+| Rust Type                                                             | Protobuf Type           |
+| --------------------------------------------------------------------- | ----------------------- |
+| [serde_json::Value](https://docs.serde.rs/serde_json/enum.Value.html) | `google.protobuf.Value` |
 
 ### Timestamp
 

@@ -1,13 +1,14 @@
-use prost_types::Any;
+use prost_types::value::Kind;
+use prost_types::{Struct, Value};
 use s2_grpc_utils::{S2ProtoPack, S2ProtoUnpack};
-use serde_json::{json, Value};
+use serde_json::{json, Value as JsonValue};
 
 #[derive(Debug, PartialEq, Clone)]
 struct Message {
   v1: i32,
   v2: String,
-  json: Option<Any>,
-  json_optional: Option<Any>,
+  json: Option<Value>,
+  json_optional: Option<Value>,
 }
 
 #[derive(Debug, S2ProtoPack, S2ProtoUnpack, PartialEq)]
@@ -15,8 +16,8 @@ struct Message {
 struct Model {
   v1: i32,
   v2: String,
-  json: Value,
-  json_optional: Option<Value>,
+  json: JsonValue,
+  json_optional: Option<JsonValue>,
 }
 
 #[test]
@@ -24,9 +25,17 @@ fn derive() {
   let msg = Message {
     v1: 1,
     v2: "text".to_string(),
-    json: Some(Any {
-      type_url: "s2/json".to_string(),
-      value: br#"{"v":1}"#.to_vec(),
+    json: Some(Value {
+      kind: Some(Kind::StructValue(Struct {
+        fields: vec![(
+          "v".to_string(),
+          Value {
+            kind: Some(Kind::NumberValue(1_f64)),
+          },
+        )]
+        .into_iter()
+        .collect(),
+      })),
     }),
     json_optional: None,
   };
@@ -39,7 +48,7 @@ fn derive() {
       v1: 1,
       v2: "text".to_string(),
       json: json!({
-        "v": 1
+        "v": 1_f64
       }),
       json_optional: None,
     }
