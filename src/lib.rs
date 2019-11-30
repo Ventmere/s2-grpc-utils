@@ -23,3 +23,29 @@ where
 {
   fn unpack(value: T) -> Result<Self, Error>;
 }
+
+impl<T1, T2> S2ProtoPack<Option<T1>> for Option<T2>
+where
+  T2: S2ProtoPack<T1>,
+{
+  fn pack(self) -> Result<Option<T1>, Error> {
+    if let Some(value) = self {
+      Ok(Some(value.pack()?))
+    } else {
+      Ok(None)
+    }
+  }
+}
+
+impl<T1, T2> S2ProtoUnpack<Option<T1>> for Option<T2>
+where
+  T2: S2ProtoUnpack<T1>,
+{
+  fn unpack(value: Option<T1>) -> Result<Self, Error> {
+    if let Some(value) = value {
+      Ok(Some(T2::unpack(value)?))
+    } else {
+      Ok(None)
+    }
+  }
+}

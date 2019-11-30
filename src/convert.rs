@@ -10,26 +10,6 @@ use crate::{S2ProtoPack, S2ProtoUnpack};
 
 macro_rules! impl_option {
   ($rust:ty => $proto:ty) => {
-    impl S2ProtoPack<Option<$proto>> for Option<$rust> {
-      fn pack(self) -> Result<Option<$proto>> {
-        if let Some(value) = self {
-          Ok(Some(value.pack()?))
-        } else {
-          Ok(None)
-        }
-      }
-    }
-
-    impl S2ProtoUnpack<Option<$proto>> for Option<$rust> {
-      fn unpack(value: Option<$proto>) -> Result<Option<$rust>> {
-        if let Some(value) = value {
-          Ok(Some(<$rust>::unpack(value)?))
-        } else {
-          Ok(None)
-        }
-      }
-    }
-
     impl S2ProtoPack<Option<$proto>> for $rust {
       fn pack(self) -> Result<Option<$proto>> {
         Ok(Some(self.pack()?))
@@ -175,32 +155,6 @@ where
   }
 }
 
-impl<T> S2ProtoPack<Option<Value>> for Option<Json<T>>
-where
-  T: Serialize + for<'de> Deserialize<'de>,
-{
-  fn pack(self) -> Result<Option<Value>> {
-    if let Some(value) = self {
-      Ok(Some(value.pack()?))
-    } else {
-      Ok(None)
-    }
-  }
-}
-
-impl<T> S2ProtoUnpack<Option<Value>> for Option<Json<T>>
-where
-  T: Serialize + for<'de> Deserialize<'de>,
-{
-  fn unpack(value: Option<Value>) -> Result<Option<Json<T>>> {
-    if let Some(value) = value {
-      Ok(Some(Json::<T>::unpack(value)?))
-    } else {
-      Ok(None)
-    }
-  }
-}
-
 pub fn pack_value<T>(value: T) -> Result<Value>
 where
   T: Serialize,
@@ -259,12 +213,12 @@ macro_rules! impl_self {
 }
 
 impl_self! {
-  f32, Option<f32>,
-  f64, Option<f64>,
-  i64, Option<i64>,
-  u64, Option<u64>,
-  i32, Option<i32>,
-  u32, Option<u32>,
-  bool, Option<bool>,
-  String, Option<String>
+  f32,
+  f64,
+  i64,
+  u64,
+  i32,
+  u32,
+  bool,
+  String
 }

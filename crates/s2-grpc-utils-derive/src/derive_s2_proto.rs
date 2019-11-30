@@ -58,16 +58,26 @@ impl ToTokens for InputReceiver {
           .map(|f| {
             let field_ident = &f.ident;
             quote! {
-              #field_ident: self.#field_ident.pack()?,
+              #field_ident: value.#field_ident.pack()?,
             }
           })
           .collect();
         tokens.extend(quote! {
           impl #imp s2_grpc_utils::S2ProtoPack<#message_type> for #ident #ty #wher {
             fn pack(self) -> s2_grpc_utils::result::Result<#message_type> {
+              let value = self;
               Ok(#message_type {
                 #(#pack_lines)*
               })
+            }
+          }
+
+          impl #imp s2_grpc_utils::S2ProtoPack<Option<#message_type>> for #ident #ty #wher {
+            fn pack(self) -> s2_grpc_utils::result::Result<Option<#message_type>> {
+              let value = self;
+              Ok(Some(#message_type {
+                #(#pack_lines)*
+              }))
             }
           }
         })
@@ -96,6 +106,18 @@ impl ToTokens for InputReceiver {
               Ok(#ident {
                 #(#unpack_lines)*
               })
+            }
+          }
+
+          impl #imp s2_grpc_utils::S2ProtoUnpack<Option<#message_type>> for #ident #ty #wher {
+            fn unpack(value: Option<#message_type>) -> s2_grpc_utils::result::Result<#ident> {
+              if let Some(value) = value {
+                Ok(#ident {
+                  #(#unpack_lines)*
+                })
+              } else {
+                Err(s2_grpc_utils::result::Error::ValueNotPresent)
+              }
             }
           }
         })
