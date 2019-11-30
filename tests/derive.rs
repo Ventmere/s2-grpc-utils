@@ -1,17 +1,17 @@
 use prost_types::Any;
-use s2_protobuf_utils::S2Proto;
+use s2_grpc_utils::{S2ProtoPack, S2ProtoUnpack};
 use serde_json::{json, Value};
 
 #[derive(Debug, PartialEq, Clone)]
 struct Message {
   v1: i32,
   v2: String,
-  json: Any,
+  json: Option<Any>,
   json_optional: Option<Any>,
 }
 
-#[derive(Debug, S2Proto, PartialEq)]
-#[s2_proto(message_type = "Message")]
+#[derive(Debug, S2ProtoPack, S2ProtoUnpack, PartialEq)]
+#[s2_grpc(message_type = "Message")]
 struct Model {
   v1: i32,
   v2: String,
@@ -20,14 +20,14 @@ struct Model {
 }
 
 #[test]
-fn derive_s2_proto() {
+fn derive() {
   let msg = Message {
     v1: 1,
     v2: "text".to_string(),
-    json: Any {
+    json: Some(Any {
       type_url: "s2/json".to_string(),
       value: br#"{"v":1}"#.to_vec(),
-    },
+    }),
     json_optional: None,
   };
 
@@ -47,4 +47,20 @@ fn derive_s2_proto() {
 
   let msg_: Message = model.pack().unwrap();
   assert_eq!(msg_, msg);
+}
+
+#[test]
+fn derive_err() {
+  let msg = Message {
+    v1: 1,
+    v2: "text".to_string(),
+    json: None,
+    json_optional: None,
+  };
+
+  let err = Model::unpack(msg.clone()).err().unwrap();
+  assert_eq!(
+    format!("{}", err),
+    "Could not unpack field 'json' from null"
+  )
 }

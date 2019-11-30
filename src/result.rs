@@ -7,6 +7,10 @@ pub enum Error {
   Json { source: serde_json::Error },
   #[snafu(display("Could not convert json value from type_url: {}", type_url))]
   JsonTypeUrlUnknown { type_url: String },
+  #[snafu(display("Could not unpack a non-optional value from null"))]
+  ValueNotPresent,
+  #[snafu(display("Could not unpack field '{}' from null", field_name))]
+  FieldValueNotPresent { field_name: &'static str },
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
