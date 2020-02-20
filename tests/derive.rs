@@ -2,6 +2,7 @@ use prost_types::value::Kind;
 use prost_types::{Struct, Value};
 use s2_grpc_utils::{S2ProtoPack, S2ProtoUnpack};
 use serde_json::{json, Value as JsonValue};
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Clone)]
 struct Message {
@@ -9,6 +10,13 @@ struct Message {
   v2: String,
   json: Option<Value>,
   json_optional: Option<Value>,
+  elements: Vec<NestedMessage>,
+  map: HashMap<i32, NestedMessage>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+struct NestedMessage {
+  v: i32,
 }
 
 #[derive(Debug, S2ProtoPack, S2ProtoUnpack, PartialEq)]
@@ -18,10 +26,21 @@ struct Model {
   v2: String,
   json: JsonValue,
   json_optional: Option<JsonValue>,
+  elements: Vec<NestedModel>,
+  map: HashMap<i32, NestedModel>,
+}
+
+#[derive(Debug, S2ProtoPack, S2ProtoUnpack, PartialEq)]
+#[s2_grpc(message_type = "NestedMessage")]
+struct NestedModel {
+  v: i32,
 }
 
 #[test]
 fn derive() {
+  let mut map = HashMap::new();
+  map.insert(1, NestedMessage { v: 2 });
+
   let msg = Message {
     v1: 1,
     v2: "text".to_string(),
@@ -38,9 +57,14 @@ fn derive() {
       })),
     }),
     json_optional: None,
+    elements: vec![NestedMessage { v: 111 }],
+    map,
   };
 
   let model = Model::unpack(msg.clone()).unwrap();
+
+  let mut map = HashMap::new();
+  map.insert(1, NestedModel { v: 2 });
 
   assert_eq!(
     model,
@@ -51,6 +75,8 @@ fn derive() {
         "v": 1_f64
       }),
       json_optional: None,
+      elements: vec![NestedModel { v: 111 }],
+      map
     }
   );
 
@@ -65,6 +91,8 @@ fn derive_err() {
     v2: "text".to_string(),
     json: None,
     json_optional: None,
+    elements: vec![],
+    map: HashMap::new(),
   };
 
   let err = Model::unpack(msg.clone()).err().unwrap();

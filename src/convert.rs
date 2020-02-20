@@ -4,6 +4,9 @@ use prost_types::{Timestamp, Value};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use snafu::ResultExt;
+use std::cmp::Eq;
+use std::collections::HashMap;
+use std::hash::Hash;
 
 use crate::result::{self, Result};
 use crate::{S2ProtoPack, S2ProtoUnpack};
@@ -221,4 +224,84 @@ impl_self! {
   u32,
   bool,
   String
+}
+
+// repeated value
+
+impl<T, T2> S2ProtoPack<Vec<T>> for Vec<T2>
+where
+  T2: S2ProtoPack<T>,
+{
+  fn pack(self) -> Result<Vec<T>> {
+    let mut r = vec![];
+    for (i, elem) in self.into_iter().enumerate() {
+      let item = elem.pack().map_err(|e| result::Error::ListElement {
+        source: Box::new(e),
+        index: i,
+      })?;
+      r.push(item);
+    }
+    Ok(r)
+  }
+}
+
+impl<T, T2> S2ProtoUnpack<Vec<T>> for Vec<T2>
+where
+  T2: S2ProtoUnpack<T>,
+{
+  fn unpack(value: Vec<T>) -> Result<Vec<T2>> {
+    let mut r = vec![];
+    for (i, elem) in value.into_iter().enumerate() {
+      let item = T2::unpack(elem).map_err(|e| result::Error::ListElement {
+        source: Box::new(e),
+        index: i,
+      })?;
+      r.push(item);
+    }
+    Ok(r)
+  }
+}
+
+// map
+
+impl<K, V, K2, V2> S2ProtoPack<HashMap<K, V>> for HashMap<K2, V2>
+where
+  K: Eq + Hash,
+  K2: S2ProtoPack<K> + Eq + Hash,
+  V2: S2ProtoPack<V>,
+{
+  fn pack(self) -> Result<HashMap<K, V>> {
+    let mut r = vec![];
+    for (k, v) in self.into_iter() {
+      let k2 = k.pack().map_err(|e| result::Error::MapEntry {
+        source: Box::new(e),
+      })?;
+      let v2 = v.pack().map_err(|e| result::Error::MapEntry {
+        source: Box::new(e),
+      })?;
+      r.push((k2, v2));
+    }
+    Ok(r.into_iter().collect())
+  }
+}
+
+impl<K, V, K2, V2> S2ProtoUnpack<HashMap<K, V>> for HashMap<K2, V2>
+where
+  K: Eq + Hash,
+  K2: S2ProtoUnpack<K> + Eq + Hash,
+  V2: S2ProtoUnpack<V>,
+{
+  fn unpack(value: HashMap<K, V>) -> Result<HashMap<K2, V2>> {
+    let mut r = vec![];
+    for (k, v) in value.into_iter() {
+      let k2 = K2::unpack(k).map_err(|e| result::Error::MapEntry {
+        source: Box::new(e),
+      })?;
+      let v2 = V2::unpack(v).map_err(|e| result::Error::MapEntry {
+        source: Box::new(e),
+      })?;
+      r.push((k2, v2));
+    }
+    Ok(r.into_iter().collect())
+  }
 }

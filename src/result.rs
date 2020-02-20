@@ -13,6 +13,10 @@ pub enum Error {
   FieldValueNotPresent { field_name: &'static str },
   #[snafu(display("JSON value nested too deeply"))]
   JsonValueNestedTooDeeply,
+  #[snafu(display("List element {}: {}", index, source))]
+  ListElement { source: Box<Error>, index: usize },
+  #[snafu(display("Map entry: {}", source))]
+  MapEntry { source: Box<Error> },
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
