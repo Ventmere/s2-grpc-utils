@@ -24,6 +24,18 @@ where
   fn unpack(value: T) -> Result<Self, Error>;
 }
 
+pub trait S2ProtoEnum
+where
+  Self: Sized,
+{
+  type ProtoEnum;
+  const NAME: &'static str;
+
+  fn from_i32(v: i32) -> Option<Self>;
+  fn pack(&self) -> Self::ProtoEnum;
+  fn get_variant_name(&self) -> &'static str;
+}
+
 impl<T1, T2> S2ProtoPack<Option<T1>> for Option<T2>
 where
   T2: S2ProtoPack<T1>,

@@ -1,6 +1,6 @@
 use prost_types::value::Kind;
 use prost_types::{Struct, Value};
-use s2_grpc_utils::{S2ProtoPack, S2ProtoUnpack};
+use s2_grpc_utils::{S2ProtoEnum, S2ProtoPack, S2ProtoUnpack};
 use serde_json::{json, Value as JsonValue};
 use std::collections::HashMap;
 
@@ -19,9 +19,14 @@ struct NestedMessage {
   v: i32,
 }
 
+fn map_i32(v: i32) -> i32 {
+  v
+}
+
 #[derive(Debug, S2ProtoPack, S2ProtoUnpack, PartialEq)]
 #[s2_grpc(message_type = "Message")]
 struct Model {
+  #[s2_grpc(map_fn = "map_i32")]
   v1: i32,
   v2: String,
   json: JsonValue,
@@ -34,6 +39,39 @@ struct Model {
 #[s2_grpc(message_type = "NestedMessage")]
 struct NestedModel {
   v: i32,
+}
+
+#[test]
+fn derive_enum() {
+  use crate::S2ProtoEnum;
+
+  #[derive(Debug, PartialEq)]
+  enum EnumProto {
+    A = 0,
+    B = 1,
+  }
+
+  impl EnumProto {
+    fn from_i32(v: i32) -> Option<Self> {
+      match v {
+        0 => Some(EnumProto::A),
+        1 => Some(EnumProto::B),
+        _ => None,
+      }
+    }
+  }
+
+  #[derive(Debug, S2ProtoEnum, PartialEq)]
+  #[s2_grpc(proto_enum_type = "EnumProto")]
+  enum EnumModel {
+    A,
+    B,
+  }
+
+  assert_eq!(EnumModel::from_i32(1), Some(EnumModel::B));
+  assert_eq!(EnumModel::B.pack(), EnumProto::B);
+  assert_eq!(EnumModel::B.get_variant_name(), "B");
+  assert_eq!(EnumModel::NAME, "EnumModel");
 }
 
 #[test]

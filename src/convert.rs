@@ -1,3 +1,4 @@
+use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use prost_types;
 use prost_types::{Timestamp, Value};
@@ -9,7 +10,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 
 use crate::result::{self, Result};
-use crate::{S2ProtoPack, S2ProtoUnpack};
+use crate::{S2ProtoEnum, S2ProtoPack, S2ProtoUnpack};
 
 macro_rules! impl_option {
   ($rust:ty => $proto:ty) => {
@@ -193,6 +194,23 @@ impl S2ProtoUnpack<Timestamp> for DateTime<Utc> {
 
 impl_option!(DateTime<Utc> => Timestamp);
 
+// BigDecimal
+
+impl S2ProtoPack<String> for BigDecimal {
+  fn pack(self) -> Result<String> {
+    Ok(self.to_string())
+  }
+}
+
+impl<T> S2ProtoUnpack<T> for BigDecimal
+where
+  T: AsRef<str>,
+{
+  fn unpack(v: T) -> Result<BigDecimal> {
+    v.as_ref().parse().context(result::ParseBigDecimal)
+  }
+}
+
 // Wrappers
 
 macro_rules! impl_self {
@@ -303,5 +321,30 @@ where
       r.push((k2, v2));
     }
     Ok(r.into_iter().collect())
+  }
+}
+
+// Enum
+
+impl<T> S2ProtoPack<i32> for T
+where
+  T: S2ProtoEnum,
+  <T as S2ProtoEnum>::ProtoEnum: Into<i32>,
+{
+  fn pack(self) -> Result<i32> {
+    let v = <Self as S2ProtoEnum>::pack(&self);
+    Ok(v.into())
+  }
+}
+
+impl<T> S2ProtoUnpack<i32> for T
+where
+  T: S2ProtoEnum,
+{
+  fn unpack(v: i32) -> Result<T> {
+    <Self as S2ProtoEnum>::from_i32(v).ok_or_else(|| result::Error::EnumDiscriminantNotFound {
+      enum_name: T::NAME,
+      discriminant: v,
+    })
   }
 }

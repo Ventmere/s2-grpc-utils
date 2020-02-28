@@ -1,10 +1,10 @@
 # S2 gRPC Utilities
 
-Utilities for gRPC/Proto Buffers.
+Automatic conversion between Protocol Buffers generated types and your Rust types.
 
 ## Usage
 
-See `s2-job-queue` project.
+See `tests/derive.rs`
 
 ## Libraries
 
@@ -26,6 +26,12 @@ All `Protobuf Type`s that have `google.protobuf` namespace are [Protocol Buffers
 | Rust Type                                                                               | Protobuf Type               |
 | --------------------------------------------------------------------------------------- | --------------------------- |
 | [chrono::DateTime&lt;Utc&gt;](https://docs.rs/chrono/0.4.9/chrono/struct.DateTime.html) | `google.protobuf.Timestamp` |
+
+### BigDecimal
+
+| Rust Type                                                                                    | Protobuf Type |
+| -------------------------------------------------------------------------------------------- | ------------- |
+| [bigdecimal::BigDecimal](https://docs.rs/bigdecimal/0.1.0/bigdecimal/struct.BigDecimal.html) | `string`      |
 
 ### Optional/Nullable Types
 
@@ -50,15 +56,34 @@ We don't need special treatment for complex types (structs) because they are alw
 
 ### Enumerations
 
-Enumeration variants must have a disriminant.
-
 ```rust
-use prost::Enumeration;
+  use crate::S2ProtoEnum;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Enumeration)]
-pub enum Gender {
-  Unknown = 0,
-  Female = 1,
-  Male = 2,
-}
+  #[derive(Debug, PartialEq)]
+  enum EnumProto {
+    A = 0,
+    B = 1,
+  }
+
+  impl EnumProto {
+    fn from_i32(v: i32) -> Option<Self> {
+      match v {
+        0 => Some(EnumProto::A),
+        1 => Some(EnumProto::B),
+        _ => None,
+      }
+    }
+  }
+
+  #[derive(Debug, S2ProtoEnum, PartialEq)]
+  #[s2_grpc(proto_enum_type = "EnumProto")]
+  enum EnumModel {
+    A,
+    B,
+  }
+
+  assert_eq!(EnumModel::from_i32(1), Some(EnumModel::B));
+  assert_eq!(EnumModel::B.pack(), EnumProto::B);
+  assert_eq!(EnumModel::B.get_variant_name(), "B");
+  assert_eq!(EnumModel::NAME, "EnumModel");
 ```

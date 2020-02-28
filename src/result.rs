@@ -17,6 +17,25 @@ pub enum Error {
   ListElement { source: Box<Error>, index: usize },
   #[snafu(display("Map entry: {}", source))]
   MapEntry { source: Box<Error> },
+  #[snafu(display("Parse decimal error: {}", source))]
+  ParseBigDecimal {
+    source: bigdecimal::ParseBigDecimalError,
+  },
+  #[snafu(display(
+    "Enum discriminant is not found: enum type = {}, discriminant = {}",
+    enum_name,
+    discriminant
+  ))]
+  EnumDiscriminantNotFound {
+    enum_name: &'static str,
+    discriminant: i32,
+  },
+}
+
+impl From<Error> for String {
+  fn from(e: Error) -> String {
+    format!("{}", e)
+  }
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
