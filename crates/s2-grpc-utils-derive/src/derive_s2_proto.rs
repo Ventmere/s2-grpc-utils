@@ -59,7 +59,7 @@ impl ToTokens for InputReceiver {
             let field_ident = &f.ident;
             if let Some(map_fn) = f.map_fn.as_ref() {
               quote! {
-                #field_ident: #map_fn(value.#field_ident).pack()?,
+                #field_ident: #map_fn(value.#field_ident),
               }
             } else {
               quote! {
@@ -99,19 +99,19 @@ impl ToTokens for InputReceiver {
               }
             } else {
               quote! {
-                value.#field_ident
+                S2ProtoUnpack::unpack(value.#field_ident).map_err(|err| {
+                  if let s2_grpc_utils::result::Error::ValueNotPresent = err {
+                    s2_grpc_utils::result::Error::FieldValueNotPresent {
+                      field_name: stringify!(#field_ident),
+                    }
+                  } else {
+                    err
+                  }
+                })?
               }
             };
             quote! {
-              #field_ident: S2ProtoUnpack::unpack(#field_expr).map_err(|err| {
-                if let s2_grpc_utils::result::Error::ValueNotPresent = err {
-                  s2_grpc_utils::result::Error::FieldValueNotPresent {
-                    field_name: stringify!(#field_ident),
-                  }
-                } else {
-                  err
-                }
-              })?,
+              #field_ident: #field_expr,
             }
           })
           .collect();
