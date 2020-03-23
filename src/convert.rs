@@ -192,6 +192,39 @@ impl S2ProtoUnpack<Timestamp> for DateTime<Utc> {
   }
 }
 
+// Duration
+
+impl S2ProtoPack<prost_types::Duration> for chrono::Duration {
+  fn pack(self) -> Result<prost_types::Duration> {
+    let duration =
+      <prost_types::Duration as From<std::time::Duration>>::from(self.to_std().map_err(|e| {
+        result::Error::ParseDuration {
+          message: e.to_string(),
+        }
+      })?);
+
+    Ok(duration)
+  }
+}
+
+impl S2ProtoUnpack<prost_types::Duration> for chrono::Duration {
+  fn unpack(value: prost_types::Duration) -> Result<chrono::Duration> {
+    use std::convert::TryInto;
+
+    let std_duration = <prost_types::Duration as TryInto<std::time::Duration>>::try_into(value)
+      .map_err(|e| result::Error::ParseDuration {
+        message: format!(
+          "Source duration value is out of range for the target type {}",
+          e.as_secs().to_string()
+        ),
+      })?;
+
+    chrono::Duration::from_std(std_duration).map_err(|e| result::Error::ParseDuration {
+      message: e.to_string(),
+    })
+  }
+}
+
 impl_option!(DateTime<Utc> => Timestamp);
 
 // BigDecimal
