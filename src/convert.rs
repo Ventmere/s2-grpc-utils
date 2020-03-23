@@ -226,6 +226,7 @@ impl S2ProtoUnpack<prost_types::Duration> for chrono::Duration {
 }
 
 impl_option!(DateTime<Utc> => Timestamp);
+impl_option!(chrono::Duration => prost_types::Duration);
 
 // BigDecimal
 
