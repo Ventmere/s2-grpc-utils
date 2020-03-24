@@ -21,6 +21,8 @@ pub enum Error {
   ParseBigDecimal {
     source: bigdecimal::ParseBigDecimalError,
   },
+  #[snafu(display("Parse duration error: {}", message))]
+  ParseDuration { message: String },
   #[snafu(display(
     "Enum discriminant is not found: enum type = {}, discriminant = {}",
     enum_name,
