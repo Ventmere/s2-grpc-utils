@@ -57,13 +57,18 @@ impl ToTokens for InputReceiver {
           .iter()
           .map(|f| {
             let field_ident = &f.ident;
+            let value_field_ident = if let Some(ident) = f.rename.as_ref() {
+              ident
+            } else {
+              f.ident.as_ref().unwrap()
+            };
             if let Some(map_fn) = f.map_fn.as_ref() {
               quote! {
-                #field_ident: #map_fn(value.#field_ident),
+                #value_field_ident: #map_fn(value.#field_ident),
               }
             } else {
               quote! {
-                #field_ident: value.#field_ident.pack()?,
+                #value_field_ident: value.#field_ident.pack()?,
               }
             }
           })
@@ -93,13 +98,18 @@ impl ToTokens for InputReceiver {
           .iter()
           .map(|f| {
             let field_ident = &f.ident;
+            let value_field_ident = if let Some(ident) = f.rename.as_ref() {
+              ident
+            } else {
+              f.ident.as_ref().unwrap()
+            };
             let field_expr = if let Some(map_fn) = f.map_fn.as_ref() {
               quote! {
-                #map_fn(value.#field_ident)
+                #map_fn(value.#value_field_ident)
               }
             } else {
               quote! {
-                S2ProtoUnpack::unpack(value.#field_ident).map_err(|err| {
+                S2ProtoUnpack::unpack(value.#value_field_ident).map_err(|err| {
                   if let s2_grpc_utils::result::Error::ValueNotPresent = err {
                     s2_grpc_utils::result::Error::FieldValueNotPresent {
                       field_name: stringify!(#field_ident),
@@ -146,6 +156,8 @@ impl ToTokens for InputReceiver {
 struct FieldReceiver {
   ident: Option<syn::Ident>,
   ty: syn::Type,
+  #[darling(default)]
+  rename: Option<syn::Ident>,
   #[darling(default)]
   map_fn: Option<syn::Path>,
 }

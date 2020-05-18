@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[derive(Debug, PartialEq, Clone)]
 struct Message {
   v1: i32,
-  v2: String,
+  _v2: String,
   json: Option<Value>,
   json_optional: Option<Value>,
   elements: Vec<NestedMessage>,
@@ -28,6 +28,7 @@ fn map_i32(v: i32) -> i32 {
 struct Model {
   #[s2_grpc(map_fn = "map_i32")]
   v1: i32,
+  #[s2_grpc(rename = "_v2")]
   v2: String,
   json: JsonValue,
   json_optional: Option<JsonValue>,
@@ -81,7 +82,7 @@ fn derive() {
 
   let msg = Message {
     v1: 1,
-    v2: "text".to_string(),
+    _v2: "text".to_string(),
     json: Some(Value {
       kind: Some(Kind::StructValue(Struct {
         fields: vec![(
@@ -126,7 +127,7 @@ fn derive() {
 fn derive_err() {
   let msg = Message {
     v1: 1,
-    v2: "text".to_string(),
+    _v2: "text".to_string(),
     json: None,
     json_optional: None,
     elements: vec![],
