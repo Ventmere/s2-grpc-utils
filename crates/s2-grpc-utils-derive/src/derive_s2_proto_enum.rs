@@ -27,12 +27,17 @@ impl ToTokens for InputReceiver {
       .iter()
       .map(|v| {
         let v_ident = &v.ident;
+        let proto_ident = if let Some(ref ident) = v.rename {
+          ident
+        } else {
+          v_ident
+        };
         (
           quote! {
-            Self::#v_ident => #proto_enum_type::#v_ident,
+            Self::#v_ident => #proto_enum_type::#proto_ident,
           },
           quote! {
-            #proto_enum_type::#v_ident => Some(Self::#v_ident),
+            #proto_enum_type::#proto_ident => Some(Self::#v_ident),
           },
         )
       })
@@ -83,6 +88,9 @@ impl ToTokens for InputReceiver {
 }
 
 #[derive(Debug, FromVariant)]
+#[darling(attributes(s2_grpc))]
 struct VariantReceiver {
   ident: syn::Ident,
+  #[darling(default)]
+  rename: Option<syn::Ident>,
 }

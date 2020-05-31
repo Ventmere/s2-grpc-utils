@@ -49,14 +49,14 @@ fn derive_enum() {
   #[derive(Debug, PartialEq)]
   enum EnumProto {
     A = 0,
-    B = 1,
+    BBBB = 1,
   }
 
   impl EnumProto {
     fn from_i32(v: i32) -> Option<Self> {
       match v {
         0 => Some(EnumProto::A),
-        1 => Some(EnumProto::B),
+        1 => Some(EnumProto::BBBB),
         _ => None,
       }
     }
@@ -66,11 +66,12 @@ fn derive_enum() {
   #[s2_grpc(proto_enum_type = "EnumProto")]
   enum EnumModel {
     A,
+    #[s2_grpc(rename = "BBBB")]
     B,
   }
 
   assert_eq!(EnumModel::from_i32(1), Some(EnumModel::B));
-  assert_eq!(EnumModel::B.pack(), EnumProto::B);
+  assert_eq!(EnumModel::B.pack(), EnumProto::BBBB);
   assert_eq!(EnumModel::B.get_variant_name(), "B");
   assert_eq!(EnumModel::NAME, "EnumModel");
 }
