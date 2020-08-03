@@ -4,6 +4,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput};
 
+mod types;
 mod derive_s2_proto;
 mod derive_s2_proto_enum;
 

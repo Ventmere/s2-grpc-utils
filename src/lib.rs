@@ -24,16 +24,23 @@ where
   fn unpack(value: T) -> Result<Self, Error>;
 }
 
-pub trait S2ProtoEnum
+pub trait S2ProtoEnumMeta {
+  const NAME: &'static str;
+  fn get_variant_name(&self) -> &'static str;
+}
+
+pub trait S2ProtoEnum<T>
 where
   Self: Sized,
 {
-  type ProtoEnum;
-  const NAME: &'static str;
-
   fn from_i32(v: i32) -> Option<Self>;
-  fn pack(&self) -> Self::ProtoEnum;
-  fn get_variant_name(&self) -> &'static str;
+  fn into_proto_enum(self) -> T;
+  fn unpack_i32(v: i32) -> Result<Self, Error> where Self: S2ProtoEnumMeta{
+    Self::from_i32(v).ok_or_else(|| Error::EnumDiscriminantNotFound {
+      enum_name: Self::NAME,
+      discriminant: v
+    })
+  }
 }
 
 impl<T1, T2> S2ProtoPack<Option<T1>> for Option<T2>
