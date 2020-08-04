@@ -123,6 +123,12 @@ fn derive_enum_field() {
     }
   }
 
+  impl Default for EnumProto {
+    fn default() -> Self {
+      EnumProto::A
+    }
+  }
+
   impl From<EnumProto> for i32 {
     fn from(v: EnumProto) -> Self {
       v as i32
@@ -141,10 +147,20 @@ fn derive_enum_field() {
     f: i32
   }
 
+  impl Message {
+    fn set_f(&mut self, v: EnumProto) {
+      self.f = v.into();
+    }
+
+    fn f(&self) -> EnumProto {
+      EnumProto::from_i32(self.f).unwrap_or_default()
+    }
+  }
+
   #[derive(Debug, S2ProtoPack, S2ProtoUnpack, PartialEq)]
   #[s2_grpc(message_type(Message))]
   struct Model {
-    #[s2_grpc(proto_enum_type = "EnumProto")]
+    #[s2_grpc(proto_enum)]
     f: EnumModel
   }
 }

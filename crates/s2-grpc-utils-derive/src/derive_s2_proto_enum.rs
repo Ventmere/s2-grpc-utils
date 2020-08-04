@@ -83,11 +83,11 @@ impl ToTokens for InputReceiver {
           };
           (
             quote! {
-            Self::#v_ident => #proto_enum_type::#proto_ident,
-          },
+              Self::#v_ident => #proto_enum_type::#proto_ident,
+            },
             quote! {
-            #proto_enum_type::#proto_ident => Some(Self::#v_ident),
-          },
+              #proto_enum_type::#proto_ident => Self::#v_ident,
+            },
           )
         })
         .unzip();
@@ -96,10 +96,9 @@ impl ToTokens for InputReceiver {
         impl #imp s2_grpc_utils::S2ProtoEnum<#proto_enum_type> for #ident #ty  #wher {
           fn from_i32(v: i32) -> Option<Self> {
             #proto_enum_type::from_i32(v)
-              .and_then(|p| {
+              .map(|p| {
                 match p {
                   #(#p2s)*
-                  _ => None,
                 }
               })
           }
@@ -107,6 +106,12 @@ impl ToTokens for InputReceiver {
           fn into_proto_enum(self) -> #proto_enum_type {
             match self {
               #(#s2p)*
+            }
+          }
+
+          fn unpack_enum(v: #proto_enum_type) -> Self {
+            match v {
+              #(#p2s)*
             }
           }
         }

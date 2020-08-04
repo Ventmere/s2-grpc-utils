@@ -41,6 +41,7 @@ where
       discriminant: v
     })
   }
+  fn unpack_enum(v: T) -> Self;
 }
 
 impl<T1, T2> S2ProtoPack<Option<T1>> for Option<T2>
