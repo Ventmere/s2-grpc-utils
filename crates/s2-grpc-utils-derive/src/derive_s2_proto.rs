@@ -1,5 +1,5 @@
 use darling::{ast, FromDeriveInput, FromField};
-use proc_macro2::{TokenStream, Span};
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 
 use crate::types::Paths;
@@ -59,6 +59,7 @@ impl ToTokens for InputReceiver {
 
         let pack_lines: Vec<_> = fields
           .iter()
+          .filter(|f| !f.skip_pack)
           .map(|f| {
             let field_ident = f.ident.as_ref().expect("field ident");
             let field_ty = &f.ty;
@@ -200,4 +201,6 @@ struct FieldReceiver {
   map_fn: Option<syn::Path>,
   #[darling(default)]
   proto_enum: bool,
+  #[darling(default)]
+  skip_pack: bool,
 }

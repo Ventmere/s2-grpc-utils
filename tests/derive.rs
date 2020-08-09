@@ -144,7 +144,7 @@ fn derive_enum_field() {
   }
 
   struct Message {
-    f: i32
+    f: i32,
   }
 
   impl Message {
@@ -161,7 +161,7 @@ fn derive_enum_field() {
   #[s2_grpc(message_type(Message))]
   struct Model {
     #[s2_grpc(proto_enum)]
-    f: EnumModel
+    f: EnumModel,
   }
 }
 
@@ -214,8 +214,14 @@ fn derive_enum_muti() {
     Some(EnumModel::B)
   );
 
-  assert_eq!(S2ProtoEnum::<EnumProto>::into_proto_enum(EnumModel::B), EnumProto::BBBB);
-  assert_eq!(S2ProtoEnum::<EnumProto2>::into_proto_enum(EnumModel::B), EnumProto2::BBBB);
+  assert_eq!(
+    S2ProtoEnum::<EnumProto>::into_proto_enum(EnumModel::B),
+    EnumProto::BBBB
+  );
+  assert_eq!(
+    S2ProtoEnum::<EnumProto2>::into_proto_enum(EnumModel::B),
+    EnumProto2::BBBB
+  );
   assert_eq!(EnumModel::B.get_variant_name(), "B");
   assert_eq!(EnumModel::NAME, "EnumModel");
 }
