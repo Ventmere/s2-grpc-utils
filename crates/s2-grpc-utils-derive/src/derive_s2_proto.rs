@@ -91,26 +91,27 @@ impl ToTokens for InputReceiver {
           })
           .collect();
         for message_type in &message_type.paths {
+          let pack_block = quote! {
+            {
+              let mut packed = #message_type {
+                #(#pack_lines)*
+              };
+              #(#setter_lines)*
+              packed
+            }
+          };
           tokens.extend(quote! {
             impl #imp s2_grpc_utils::S2ProtoPack<#message_type> for #ident #ty #wher {
               fn pack(self) -> s2_grpc_utils::result::Result<#message_type> {
                 let value = self;
-                Ok({
-                  let mut packed = #message_type {
-                    #(#pack_lines)*
-                  };
-                  #(#setter_lines)*
-                  packed
-                })
+                Ok(#pack_block)
               }
             }
 
             impl #imp s2_grpc_utils::S2ProtoPack<Option<#message_type>> for #ident #ty #wher {
               fn pack(self) -> s2_grpc_utils::result::Result<Option<#message_type>> {
                 let value = self;
-                Ok(Some(#message_type {
-                  #(#pack_lines)*
-                }))
+                Ok(Some(#pack_block))
               }
             }
           })
@@ -161,23 +162,23 @@ impl ToTokens for InputReceiver {
           .collect();
 
         for message_type in &message_type.paths {
+          let unpack_block = quote! {
+            #(#getter_lines)*
+            Ok(#ident {
+              #(#unpack_lines)*
+            })
+          };
           tokens.extend(quote! {
             impl #imp s2_grpc_utils::S2ProtoUnpack<#message_type> for #ident #ty #wher {
               fn unpack(value: #message_type) -> s2_grpc_utils::result::Result<#ident> {
-                #(#getter_lines)*
-                Ok(#ident {
-                  #(#unpack_lines)*
-                })
+                #unpack_block
               }
             }
 
             impl #imp s2_grpc_utils::S2ProtoUnpack<Option<#message_type>> for #ident #ty #wher {
               fn unpack(value: Option<#message_type>) -> s2_grpc_utils::result::Result<#ident> {
                 if let Some(value) = value {
-                  #(#getter_lines)*
-                  Ok(#ident {
-                    #(#unpack_lines)*
-                  })
+                  #unpack_block
                 } else {
                   Err(s2_grpc_utils::result::Error::ValueNotPresent)
                 }
