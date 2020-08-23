@@ -275,7 +275,8 @@ impl_self! {
   i32,
   u32,
   bool,
-  String
+  String,
+  Vec<u8>
 }
 
 // repeated value
